@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { embedOne } from "@/lib/supabase/embed";
 import { shuffle, type ClipCardData } from "@/lib/clips";
 import { signStorageUrls } from "@/lib/storage";
 
@@ -14,6 +15,12 @@ export type CueDetail = CuePlayable & {
   related: ClipCardData[];
 };
 
+export type EpisodeEmbed = {
+  season: number;
+  episode: number;
+  title_en: string | null;
+};
+
 export type CueRow = {
   id: string;
   episode_id: string;
@@ -25,12 +32,16 @@ export type CueRow = {
   clip_key: string | null;
   clip_duration_ms: number | null;
   media_status: string;
-  episodes: {
-    season: number;
-    episode: number;
-    title_en: string | null;
-  } | null;
+  episodes: EpisodeEmbed | null;
 };
+
+type CueQueryRow = Omit<CueRow, "episodes"> & {
+  episodes: EpisodeEmbed | EpisodeEmbed[] | null;
+};
+
+function toCueRow(row: CueQueryRow): CueRow {
+  return { ...row, episodes: embedOne(row.episodes) };
+}
 
 function toCard(
   row: CueRow,
@@ -60,7 +71,7 @@ export const getReadyCueRow = cache(async (id: string): Promise<CueRow | null> =
     .eq("media_status", "ready")
     .maybeSingle();
   if (error) throw error;
-  return (data as CueRow | null) ?? null;
+  return data ? toCueRow(data) : null;
 });
 
 export function cueCardKey(row: Pick<CueRow, "id" | "thumb_key" | "episodes">) {
@@ -126,10 +137,10 @@ export const getCueDetail = cache(async (id: string): Promise<CueDetail | null> 
     .limit(40);
 
   const contextRows = [
-    ...((prev ?? []) as CueRow[]).reverse(),
-    ...((next ?? []) as CueRow[]),
+    ...(prev ?? []).map(toCueRow).reverse(),
+    ...(next ?? []).map(toCueRow),
   ];
-  const relatedRows = shuffle((siblings ?? []) as CueRow[]).slice(0, 8);
+  const relatedRows = shuffle((siblings ?? []).map(toCueRow)).slice(0, 8);
   const thumbKeys = [cue, ...contextRows, ...relatedRows]
     .map((row) => row.thumb_key)
     .filter((key): key is string => Boolean(key));

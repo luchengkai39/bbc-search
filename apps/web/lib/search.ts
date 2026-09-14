@@ -1,6 +1,7 @@
 import { shuffle, type ClipCardData } from "@/lib/clips";
 import { signStorageUrls } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { embedOne } from "@/lib/supabase/embed";
 
 type SearchRow = {
   id: string;
@@ -11,11 +12,6 @@ type SearchRow = {
   season: number;
   episode: number;
   episode_title_en?: string | null;
-  episodes?: {
-    season: number;
-    episode: number;
-    title_en: string | null;
-  } | null;
 };
 
 async function signThumbs(rows: SearchRow[]): Promise<ClipCardData[]> {
@@ -24,22 +20,16 @@ async function signThumbs(rows: SearchRow[]): Promise<ClipCardData[]> {
     .filter((key): key is string => Boolean(key));
   const signed = await signStorageUrls("thumbs", keys);
 
-  return rows.map((row) => {
-    const nested = row.episodes;
-    const season = row.season ?? nested?.season ?? 1;
-    const episode = row.episode ?? nested?.episode ?? 1;
-    const title = row.episode_title_en ?? nested?.title_en ?? "";
-    return {
-      id: row.id,
-      textEn: row.text_en ?? "",
-      textZh: row.text_zh ?? "",
-      season,
-      episode,
-      episodeTitleEn: title,
-      clipDurationMs: row.clip_duration_ms,
-      thumbUrl: row.thumb_key ? signed.get(row.thumb_key) ?? null : null,
-    };
-  });
+  return rows.map((row) => ({
+    id: row.id,
+    textEn: row.text_en ?? "",
+    textZh: row.text_zh ?? "",
+    season: row.season,
+    episode: row.episode,
+    episodeTitleEn: row.episode_title_en ?? "",
+    clipDurationMs: row.clip_duration_ms,
+    thumbUrl: row.thumb_key ? signed.get(row.thumb_key) ?? null : null,
+  }));
 }
 
 export async function searchClips(query: string, season: number): Promise<ClipCardData[]> {
@@ -57,12 +47,19 @@ export async function searchClips(query: string, season: number): Promise<ClipCa
       .limit(80);
 
     if (error) throw error;
-    const rows = ((data ?? []) as SearchRow[]).map((row) => ({
-      ...row,
-      season: row.episodes?.season ?? season,
-      episode: row.episodes?.episode ?? 1,
-      episode_title_en: row.episodes?.title_en ?? "",
-    }));
+    const rows: SearchRow[] = (data ?? []).map((row) => {
+      const episode = embedOne(row.episodes);
+      return {
+        id: row.id,
+        text_en: row.text_en,
+        text_zh: row.text_zh,
+        thumb_key: row.thumb_key,
+        clip_duration_ms: row.clip_duration_ms,
+        season: episode?.season ?? season,
+        episode: episode?.episode ?? 1,
+        episode_title_en: episode?.title_en ?? "",
+      };
+    });
     return signThumbs(shuffle(rows).slice(0, 9));
   }
 
@@ -71,5 +68,16 @@ export async function searchClips(query: string, season: number): Promise<ClipCa
     p_season: season,
   });
   if (error) throw error;
-  return signThumbs((data ?? []) as SearchRow[]);
+  return signThumbs(
+    (data ?? []).map((row: SearchRow) => ({
+      id: row.id,
+      text_en: row.text_en,
+      text_zh: row.text_zh,
+      thumb_key: row.thumb_key,
+      clip_duration_ms: row.clip_duration_ms,
+      season: row.season,
+      episode: row.episode,
+      episode_title_en: row.episode_title_en,
+    })),
+  );
 }
