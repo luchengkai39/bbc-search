@@ -1,0 +1,2 @@
+-- Intentionally empty. Show row is seeded in 0001_init.sql.
+-- Do not load source video or real dialogue here.

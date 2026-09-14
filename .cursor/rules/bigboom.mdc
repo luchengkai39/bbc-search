@@ -1,0 +1,27 @@
+---
+description: Bigboom architecture, media, and secret guardrails
+alwaysApply: true
+---
+
+# Bigboom
+
+Work in layers. Do not collapse them.
+
+- **L1** `scripts/ingest`: ffmpeg only. Pull original MP4/SRT from private R2 into `data/work`, delete after the episode.
+- **L2 source** R2 `raw/video` and `raw/subs`: private originals. Never public, never served by the website.
+- **L2 derived** Supabase Storage: thumbs/clips/cards only. Never upload source episodes there.
+- **L3** Postgres: metadata and storage keys, never local disk paths.
+- **L4** Next route handlers: sign derived URLs. `SUPABASE_SERVICE_ROLE_KEY` and `R2_*` are server/ingest only.
+- **L5** UI: no card autoplay. Index clips max **4 seconds**.
+
+```
+# ❌ BAD — client bundle
+process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY
+process.env.NEXT_PUBLIC_R2_SECRET_ACCESS_KEY
+
+# ✅ GOOD — scripts/ingest or server route only
+process.env.SUPABASE_SERVICE_ROLE_KEY
+process.env.R2_SECRET_ACCESS_KEY
+```
+
+Do not commit `data/`, `.env.local`, or media. Do not run ffmpeg on Vercel. Do not build a public episode library.

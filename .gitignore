@@ -1,0 +1,46 @@
+# dependencies
+node_modules
+.pnp
+.pnp.*
+
+# next / build
+.next
+out
+build
+dist
+*.tsbuildinfo
+
+# env — keep .env.example
+.env
+.env.local
+.env.*.local
+scripts/.env
+
+# media and ingest scratch (L1 only, never commit)
+data/raw/video/*
+!data/raw/video/.gitkeep
+data/raw/subs/*
+!data/raw/subs/.gitkeep
+data/work/*
+!data/work/.gitkeep
+*.mp4
+*.mkv
+*.avi
+*.srt
+*.ass
+
+# logs / os
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# vercel / supabase local
+.vercel
+.supabase/.temp
+.supabase/.branches
+
+# typescript
+next-env.d.ts
