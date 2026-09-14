@@ -24,4 +24,4 @@ process.env.SUPABASE_SERVICE_ROLE_KEY
 process.env.R2_SECRET_ACCESS_KEY
 ```
 
-Do not commit `data/`, `.env.local`, or media. Do not run ffmpeg on Vercel. Do not build a public episode library.
+Do not commit `data/`, `.env.local`, or media. Do not run ffmpeg on Netlify/Vercel. Do not build a public episode library.

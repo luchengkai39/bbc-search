@@ -1,0 +1,21 @@
+# Build from the repo root (pnpm workspace). In the Netlify UI:
+# - Base directory: leave empty
+# - Package directory: apps/web
+# Do not set base = "apps/web" — that breaks the workspace lockfile and publish path.
+
+[build]
+  command = "pnpm --filter web build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_FLAGS = "--shamefully-hoist"
+
+# Next lives in apps/web, not the root package.json. Keep this so Netlify
+# installs the OpenNext adapter even without pinning a version in package.json.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[dev]
+  command = "pnpm --filter web dev"
+  targetPort = 3000

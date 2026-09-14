@@ -1,0 +1,13 @@
+# Used when Netlify Package directory is apps/web.
+# Paths are relative to the repo root (leave Base directory empty).
+
+[build]
+  command = "pnpm --filter web build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_FLAGS = "--shamefully-hoist"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
